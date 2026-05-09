@@ -1,14 +1,14 @@
 module.exports = async function getClientData(phoneNumber) {
   try {
+    console.log(`\n[getClientData-1] Function called with phoneNumber: ${phoneNumber}`);
     const cleanPhone = String(phoneNumber).trim();
-    console.log(`� [getClientData] Ищу клиента: ${cleanPhone}`);
+    console.log(`[getClientData-2] Clean phone: ${cleanPhone}`);
 
-    // � ТЕСТОВЫЕ ДАННЫЕ
-    console.log('⚠️ [getClientData] ИСПОЛЬЗУЮТСЯ ТЕСТОВЫЕ ДАННЫЕ!');
+    console.log('[getClientData-3] ИСПОЛЬЗУЮТСЯ ТЕСТОВЫЕ ДАННЫЕ!');
     
     if (cleanPhone === '77077503507') {
-      console.log('✅ [getClientData] Найден: mina_001');
-      return {
+      console.log('[getClientData-4] Phone matches test number');
+      const testData = {
         clientId: 'mina_001',
         botName: 'Ника',
         googleDocId: '1q1YfdlbMeBWRVBAdzsGcC0OMSwF-4lOYHTdBNlmX33c',
@@ -20,12 +20,15 @@ module.exports = async function getClientData(phoneNumber) {
         status: 'active',
         balance: 10000,
       };
+      console.log('[getClientData-5] Returning test data:', JSON.stringify(testData, null, 2));
+      return testData;
     }
 
-    console.log(`❌ [getClientData] Клиент ${cleanPhone} не найден`);
+    console.log(`[getClientData-6] Phone ${cleanPhone} not in test data`);
     return null;
   } catch (error) {
-    console.error('❌ [getClientData] Ошибка:', error.message);
+    console.error('[getClientData-ERROR] Error:', error.message);
+    console.error('[getClientData-ERROR-STACK]', error.stack);
     return null;
   }
 };
