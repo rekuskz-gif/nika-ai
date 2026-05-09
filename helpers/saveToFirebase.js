@@ -1,4 +1,4 @@
-const admin = require('firebase-admin');
+const admin = require('../config/firebase');
 
 const db = admin.database();
 
@@ -24,7 +24,7 @@ module.exports.getHistoryFromFirebase = async (clientId, sessionId) => {
     
     return messages;
   } catch (error) {
-    console.error('❌ Ошибка получения истории:', error.message);
+    console.error('❌ Ошибка Firebase:', error.message);
     return [];
   }
 };
