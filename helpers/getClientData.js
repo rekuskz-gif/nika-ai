@@ -6,14 +6,17 @@ module.exports = async function getClientData(phoneNumber) {
     const cleanPhone = String(phoneNumber).trim();
     console.log(`� Ищу клиента: ${cleanPhone}`);
 
-    // Объединяем 2 части GOOGLE_PRIVATE_KEY
-    const privateKeyPart1 = process.env.GOOGLE_PRIVATE_KEY_PART1 || '';
-    const privateKeyPart2 = process.env.GOOGLE_PRIVATE_KEY_PART2 || '';
-    const fullPrivateKey = privateKeyPart1 + privateKeyPart2;
+    // Используем FIREBASE_PRIVATE_KEY (он уже целый)
+    const fullPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    if (!fullPrivateKey) {
+      console.error('❌ FIREBASE_PRIVATE_KEY не найден!');
+      return null;
+    }
 
     console.log(`� FullPrivateKey length: ${fullPrivateKey.length}`);
 
-    // Создаём JWT токен с объединённым ключом
+    // Создаём JWT токен
     const serviceAccountAuth = new JWT({
       email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       key: fullPrivateKey.replace(/\\n/g, '\n'),
