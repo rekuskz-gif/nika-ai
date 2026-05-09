@@ -22,14 +22,22 @@ module.exports = async function getClientData(phoneNumber) {
       return null;
     }
 
-    const rows = await sheet.getRows();
+    // ВАЖНО! Начинаем с СТРОКИ 5 (индекс 4, потому что 0-based)
+    // Пропускаем: строка 1 (заголовки), строки 2-4 (пустые)
+    const rows = await sheet.getRows({ limit: 1000 });
 
-    const clientRow = rows.find(row => 
+    // Фильтруем от строки 5 и дальше (индекс >= 4)
+    const validRows = rows.filter((row, index) => {
+      return index >= 4 && row['clientId']; // Строка 5+ и clientId не пусто
+    });
+
+    // Ищем по номеру WhatsApp
+    const clientRow = validRows.find(row => 
       row['whatsapp phone'] && row['whatsapp phone'].toString() === phoneNumber.toString()
     );
 
     if (!clientRow) {
-      console.log(`❌ Клиент ${phoneNumber} не найден`);
+      console.log(`❌ Клиент ${phoneNumber} не найден (поиск начинался со строки 5)`);
       return null;
     }
 
@@ -42,7 +50,6 @@ module.exports = async function getClientData(phoneNumber) {
       claudeApiKey: clientRow['claudeApiKey'],
       tgToken: clientRow['tgToken'],
       tgChatId: clientRow['tg ChatId'],
-      greenApiUrl: clientRow['green api url'],
       greenApiIdInstance: clientRow['green api id instance'],
       greenApiToken: clientRow['green api token'],
       status: clientRow['status'],
