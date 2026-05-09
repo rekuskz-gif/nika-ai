@@ -14,11 +14,18 @@ module.exports = async (req, res) => {
   try {
     const data = req.body;
 
+    console.log('FULL BODY:', JSON.stringify(data));
+
     let sender = null;
     let messageText = null;
+    let instanceId = null;
 
     if (data?.senderData?.sender) {
       sender = data.senderData.sender;
+    }
+
+    if (data?.instanceData?.idInstance) {
+      instanceId = String(data.instanceData.idInstance);
     }
 
     if (data?.messageData?.extendedTextMessageData?.text) {
@@ -32,6 +39,7 @@ module.exports = async (req, res) => {
     }
 
     console.log(`Sender: ${sender}`);
+    console.log(`InstanceId: ${instanceId}`);
     console.log(`Message: ${messageText}\n`);
 
     if (!sender || !messageText) {
@@ -41,7 +49,7 @@ module.exports = async (req, res) => {
     }
 
     console.log('Getting client data...');
-    const clientData = await getClientData(sender);
+    const clientData = await getClientData(instanceId);
 
     if (!clientData) {
       console.log('Client not found - returning');
