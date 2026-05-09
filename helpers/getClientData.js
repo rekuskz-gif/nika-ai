@@ -1,28 +1,94 @@
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+const { JWT } = require('google-auth-library');
+
 module.exports = async function getClientData(phoneNumber) {
   try {
     const cleanPhone = String(phoneNumber).trim();
-    console.log(`� [getClientData] Ищу клиента: ${cleanPhone}`);
-    console.log('⚠️ [getClientData] ИСПОЛЬЗУЮТСЯ ТЕСТОВЫЕ ДАННЫЕ!');
-    
-    if (cleanPhone === '77077503507') {
-      console.log('✅ [getClientData] Найден: mina_001');
-      return {
-        clientId: 'mina_001',
-        botName: 'Ника',
-        googleDocId: '1q1YfdlbMeBWRVBAdzsGcC0OMSwF-4lOYHTdBNlmX33c',
-        claudeApiKey: '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',
-        tgToken: '8738435659:AAEV4tmSO8OLmCP3e22NaUg4Gb5x8grEUk0',
-        tgChatId: '-1003909426405',
-        greenApiIdInstance: '1105585279',
-        greenApiToken: '07e78d2cfdc3490592b0ac0ec055bc442c9bcbbfc6a244e4b4',
-        status: 'active',
-        balance: 10000,
-      };
+    console.log(`[getClientData] Ищу клиента по телефону: ${cleanPhone}`);
+
+    // Подключаемся к таблице
+    const serviceAccountAuth = new JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
+    await doc.loadInfo();
+    console.log(`[getClientData] Таблица загружена: ${doc.title}`);
+
+    // Лист "Nika WhatsApp"
+    const sheet = doc.sheetsByTitle['Nika WhatsApp'];
+    if (!sheet) {
+      console.error('[getClientData] Лист "Nika WhatsApp" не найден!');
+      return null;
     }
-    console.log(`❌ [getClientData] Клиент ${cleanPhone} не найден`);
-    return null;
+
+    const rows = await sheet.getRows();
+
+    // Ищем строку где whatsapp phone совпадает
+    const row = rows.find(r => String(r.get('whatsapp phone')).trim() === cleanPhone);
+
+    if (!row) {
+      console.log(`[getClientData] Клиент ${cleanPhone} не найден в таблице`);
+      return null;
+    }
+
+    console.log(`[getClientData] Найден клиент: ${row.get('clientId')}`);
+
+    // Берём значение — если пусто идём на лист Authentication
+    const getValue = async (fieldName) => {
+      const val = row.get(fieldName);
+      if (val && String(val).trim() !== '') {
+        return String(val).trim();
+      }
+
+      // Значение пустое — идём на лист Authentication
+      console.log(`[getClientData] Поле "${fieldName}" пустое — ищу в Authentication`);
+      const authSheet = doc.sheetsByTitle['Authentication'];
+      if (!authSheet) return null;
+
+      const authRows = await authSheet.getRows();
+      const authRow = authRows.find(r => String(r.get('clientId')).trim() === String(row.get('clientId')).trim());
+      if (!authRow) return null;
+
+      const authVal = authRow.get(fieldName);
+      return authVal ? String(authVal).trim() : null;
+    };
+
+    const clientId = await getValue('clientId');
+    const botName = await getValue('bot Name');
+    const googleDocId = await getValue('google DocId');
+    const claudeApiKey = await getValue('claudeApiKey');
+    const tgToken = await getValue('tgToken');
+    const tgChatId = await getValue('tg ChatId');
+    const greenApiIdInstance = await getValue('green api id instance');
+    const greenApiToken = await getValue('green api token');
+    const status = await getValue('status');
+    const balance = await getValue('balance');
+
+    if (status !== 'active') {
+      console.log(`[getClientData] Клиент ${clientId} неактивен`);
+      return null;
+    }
+
+    console.log(`[getClientData] Данные загружены для: ${clientId}`);
+
+    return {
+      clientId,
+      botName,
+      googleDocId,
+      claudeApiKey,
+      tgToken,
+      tgChatId,
+      greenApiIdInstance,
+      greenApiToken,
+      status,
+      balance: Number(balance) || 0,
+    };
+
   } catch (error) {
-    console.error('❌ [getClientData] Ошибка:', error.message);
+    console.error('[getClientData] Ошибка:', error.message);
     return null;
   }
 };
