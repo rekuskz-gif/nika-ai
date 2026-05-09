@@ -6,17 +6,18 @@ module.exports = async function getClientData(phoneNumber) {
     const cleanPhone = String(phoneNumber).trim();
     console.log(`🔍 Ищу клиента: ${cleanPhone}`);
 
-    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
-
-    // НОВЫЙ СИНТАКСИС с JWT
+    // Создаём JWT токен
     const serviceAccountAuth = new JWT({
       email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 
-    await doc.auth.setAuthenticationMethod(serviceAccountAuth);
+    // Инициализируем документ с JWT
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
+
     await doc.loadInfo();
+    console.log('✅ Google Sheets загружена');
 
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
     if (!sheet) {
@@ -52,6 +53,7 @@ module.exports = async function getClientData(phoneNumber) {
     };
   } catch (error) {
     console.error('❌ getClientData error:', error.message);
+    console.error(error);
     return null;
   }
 };
