@@ -4,5 +4,6 @@
     "api/whatsapp_webhook.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "outputDirectory": "./"
 }
