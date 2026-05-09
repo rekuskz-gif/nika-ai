@@ -1,4 +1,5 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
+const { JWT } = require('google-auth-library');
 
 module.exports = async function getClientData(phoneNumber) {
   try {
@@ -8,11 +9,17 @@ module.exports = async function getClientData(phoneNumber) {
 
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID);
 
-    await doc.useServiceAccountAuth({
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    // ПРАВИЛЬНЫЙ СПОСОБ для новой версии google-spreadsheet
+    const auth = new JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      scopes: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'
+      ]
     });
 
+    doc.useServiceAccountAuth(auth);
     await doc.loadInfo();
 
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
@@ -22,22 +29,22 @@ module.exports = async function getClientData(phoneNumber) {
       return null;
     }
 
-    // ВАЖНО! Начинаем с СТРОКИ 5 (индекс 4, потому что 0-based)
-    // Пропускаем: строка 1 (заголовки), строки 2-4 (пустые)
-    const rows = await sheet.getRows({ limit: 1000 });
-
-    // Фильтруем от строки 5 и дальше (индекс >= 4)
-    const validRows = rows.filter((row, index) => {
-      return index >= 4 && row['clientId']; // Строка 5+ и clientId не пусто
-    });
+    // Получаем строки (начиная со строки 2, потому что 1 = заголовки)
+    const rows = await sheet.getRows({ offset: 1 });
 
     // Ищем по номеру WhatsApp
-    const clientRow = validRows.find(row => 
-      row['whatsapp phone'] && row['whatsapp phone'].toString() === phoneNumber.toString()
+    const clientRow = rows.find(row => 
+      row['whatsapp phone'] && 
+      row['whatsapp phone'].toString().trim() === phoneNumber.toString().trim()
     );
 
     if (!clientRow) {
-      console.log(`❌ Клиент ${phoneNumber} не найден (поиск начинался со строки 5)`);
+      console.log(`❌ Клиент ${phoneNumber} не найден`);
+      return null;
+    }
+
+    if (!clientRow['clientId']) {
+      console.log(`❌ clientId пусто в строке`);
       return null;
     }
 
@@ -59,6 +66,7 @@ module.exports = async function getClientData(phoneNumber) {
 
   } catch (error) {
     console.error('❌ Ошибка getClientData:', error.message);
+    console.error(error);
     return null;
   }
 };
