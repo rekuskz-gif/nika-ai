@@ -25,8 +25,9 @@ module.exports = async function getClientData(instanceId) {
       return null;
     }
 
-    const rows = await sheet.getRows();
-    console.log(`[getClientData] Строк: ${rows.length}`);
+    // Читаем с 5й строки (offset: 4)
+    const rows = await sheet.getRows({ offset: 4 });
+    console.log(`[getClientData] Строк начиная с 5й: ${rows.length}`);
 
     const row = rows.find(r => String(r.get('green api id instance')).trim() === String(instanceId).trim());
 
