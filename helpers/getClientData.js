@@ -6,10 +6,11 @@ module.exports = async function getClientData(phoneNumber) {
     const cleanPhone = String(phoneNumber).trim();
     console.log(`[getClientData] Ищу клиента по телефону: ${cleanPhone}`);
 
-    // Подключаемся к таблице
+    const privateKey = (process.env.GOOGLE_PRIVATE_KEY_PART1 + process.env.GOOGLE_PRIVATE_KEY_PART2).replace(/\\n/g, '\n');
+
     const serviceAccountAuth = new JWT({
       email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      key: privateKey,
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
@@ -17,7 +18,6 @@ module.exports = async function getClientData(phoneNumber) {
     await doc.loadInfo();
     console.log(`[getClientData] Таблица загружена: ${doc.title}`);
 
-    // Лист "Nika WhatsApp"
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
     if (!sheet) {
       console.error('[getClientData] Лист "Nika WhatsApp" не найден!');
@@ -26,7 +26,6 @@ module.exports = async function getClientData(phoneNumber) {
 
     const rows = await sheet.getRows();
 
-    // Ищем строку где whatsapp phone совпадает
     const row = rows.find(r => String(r.get('whatsapp phone')).trim() === cleanPhone);
 
     if (!row) {
@@ -36,14 +35,12 @@ module.exports = async function getClientData(phoneNumber) {
 
     console.log(`[getClientData] Найден клиент: ${row.get('clientId')}`);
 
-    // Берём значение — если пусто идём на лист Authentication
     const getValue = async (fieldName) => {
       const val = row.get(fieldName);
       if (val && String(val).trim() !== '') {
         return String(val).trim();
       }
 
-      // Значение пустое — идём на лист Authentication
       console.log(`[getClientData] Поле "${fieldName}" пустое — ищу в Authentication`);
       const authSheet = doc.sheetsByTitle['Authentication'];
       if (!authSheet) return null;
@@ -72,7 +69,7 @@ module.exports = async function getClientData(phoneNumber) {
       return null;
     }
 
-    console.log(`[getClientData] Данные загружены для: ${clientId}`);
+    console.log(`[getClientData] Все данные загружены для: ${clientId}`);
 
     return {
       clientId,
