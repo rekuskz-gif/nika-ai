@@ -1,10 +1,9 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
 
-module.exports = async function getClientData(phoneNumber) {
+module.exports = async function getClientData(instanceId) {
   try {
-    const cleanPhone = String(phoneNumber).trim();
-    console.log(`[getClientData] Ищу клиента по телефону: ${cleanPhone}`);
+    console.log(`[getClientData] Ищу клиента по instanceId: ${instanceId}`);
 
     const email = 'mina-ai@ai-mina-system.iam.gserviceaccount.com';
     const sheetId = '1DYCnjY4n5KsiOUC76YsaHUqOG3sJpbj72psQKFqNuIg';
@@ -16,7 +15,6 @@ module.exports = async function getClientData(phoneNumber) {
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
-    console.log('[getClientData] Подключаюсь к таблице...');
     const doc = new GoogleSpreadsheet(sheetId, serviceAccountAuth);
     await doc.loadInfo();
     console.log(`[getClientData] Таблица загружена: ${doc.title}`);
@@ -24,18 +22,17 @@ module.exports = async function getClientData(phoneNumber) {
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
     if (!sheet) {
       console.error('[getClientData] Лист "Nika WhatsApp" не найден!');
-      console.log('[getClientData] Доступные листы:', Object.keys(doc.sheetsByTitle));
       return null;
     }
 
     const rows = await sheet.getRows();
     console.log(`[getClientData] Строк: ${rows.length}`);
 
-    const row = rows.find(r => String(r.get('whatsapp phone')).trim() === cleanPhone);
+    const row = rows.find(r => String(r.get('green api id instance')).trim() === String(instanceId).trim());
 
     if (!row) {
-      console.log(`[getClientData] Клиент ${cleanPhone} не найден`);
-      console.log('[getClientData] Телефоны в таблице:', rows.map(r => r.get('whatsapp phone')));
+      console.log(`[getClientData] Клиент с instanceId ${instanceId} не найден`);
+      console.log('[getClientData] Инстансы в таблице:', rows.map(r => r.get('green api id instance')));
       return null;
     }
 
