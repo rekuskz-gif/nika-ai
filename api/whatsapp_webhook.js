@@ -26,33 +26,49 @@ module.exports = async (req, res) => {
     let sender = null;
     let messageText = null;
 
-    // Пробуем разные варианты
+    // ИЗВЛЕКАЕМ sender
     if (data?.webhook_body?.senderData?.sender) {
       sender = data.webhook_body.senderData.sender;
-      console.log('✅ Найден в webhook_body.senderData.sender');
+      console.log('✅ Найден sender в webhook_body.senderData.sender');
     } else if (data?.senderData?.sender) {
       sender = data.senderData.sender;
-      console.log('✅ Найден в senderData.sender');
+      console.log('✅ Найден sender в senderData.sender');
     } else if (data?.body?.senderData?.sender) {
       sender = data.body.senderData.sender;
-      console.log('✅ Найден в body.senderData.sender');
+      console.log('✅ Найден sender в body.senderData.sender');
     } else {
-      console.log('❌ Не найден sender');
+      console.log('❌ sender не найден');
     }
 
-    if (data?.webhook_body?.messageData?.textMessageData?.textMessage) {
-      messageText = data.webhook_body.messageData.textMessageData.textMessage;
-      console.log('✅ Найден messageText');
-    } else if (data?.messageData?.textMessageData?.textMessage) {
+    // ИЗВЛЕКАЕМ messageText - РАЗНЫЕ ВАРИАНТЫ
+    console.log('\n🔍 Ищу messageText...');
+    
+    // Вариант 1: textMessageData (обычное сообщение)
+    if (data?.messageData?.textMessageData?.textMessage) {
       messageText = data.messageData.textMessageData.textMessage;
-      console.log('✅ Найден messageText');
-    } else if (data?.body?.messageData?.textMessageData?.textMessage) {
+      console.log('✅ Найден в textMessageData.textMessage');
+    } 
+    // Вариант 2: extendedTextMessageData (форматированное сообщение)
+    else if (data?.messageData?.extendedTextMessageData?.text) {
+      messageText = data.messageData.extendedTextMessageData.text;
+      console.log('✅ Найден в extendedTextMessageData.text');
+    }
+    // Вариант 3: webhook_body
+    else if (data?.webhook_body?.messageData?.textMessageData?.textMessage) {
+      messageText = data.webhook_body.messageData.textMessageData.textMessage;
+      console.log('✅ Найден в webhook_body.textMessageData');
+    }
+    // Вариант 4: body вложение
+    else if (data?.body?.messageData?.textMessageData?.textMessage) {
       messageText = data.body.messageData.textMessageData.textMessage;
-      console.log('✅ Найден messageText');
-    } else {
-      console.log('❌ messageText не найден');
+      console.log('✅ Найден в body.textMessageData');
+    }
+    // Если ничего не найдено
+    else {
+      console.log('❌ messageText не найден ни в одном варианте');
     }
 
+    // Убираем @c.us если есть
     if (sender && sender.includes('@c.us')) {
       sender = sender.replace('@c.us', '');
     }
@@ -60,13 +76,14 @@ module.exports = async (req, res) => {
     console.log(`\n📱 Sender: ${sender}`);
     console.log(`💬 Message: ${messageText}\n`);
 
+    // Проверяем что есть оба значения
     if (!sender || !messageText) {
       console.log('⚠️ Нет sender или messageText - выходим');
       return;
     }
 
-    // Ищем клиента
-    console.log('🔍 Ищу клиента...');
+    // Ищем клиента в Google Sheets
+    console.log('🔍 Ищу клиента в Google Sheets...');
     const clientData = await getClientData(sender);
 
     if (!clientData) {
@@ -77,25 +94,26 @@ module.exports = async (req, res) => {
     const { clientId, claudeApiKey, tgToken, tgChatId, greenApiIdInstance, greenApiToken } = clientData;
     console.log(`✅ Клиент найден: ${clientId}\n`);
 
-    // Создаём sessionId
+    // Создаём уникальный sessionId
     const sessionId = `whatsapp_${sender}_${Date.now()}`;
     console.log(`📝 Session: ${sessionId}\n`);
 
-    // Сохраняем входящее сообщение
-    console.log('💾 Сохраняю входящее сообщение...');
+    // Сохраняем входящее сообщение в Firebase
+    console.log('💾 Сохраняю входящее сообщение в Firebase...');
     await saveToFirebase(clientId, sessionId, {
       role: 'user',
       content: messageText,
       channel: 'whatsapp',
       timestamp: new Date().toISOString()
     });
+    console.log('✅ Сообщение сохранено\n');
 
-    // Получаем историю
+    // Получаем историю чата из Firebase
     const chatHistory = await getHistoryFromFirebase(clientId, sessionId);
     console.log(`✅ История загружена (${chatHistory.length} сообщений)\n`);
 
-    // Отправляем в Claude
-    console.log('🚀 Отправляю в Claude...');
+    // Отправляем в Claude API
+    console.log('🚀 Отправляю запрос в Claude...');
     
     const systemPrompt = "Ты полезный AI ассистент. Отвечай кратко и полезно.";
     
@@ -122,29 +140,32 @@ module.exports = async (req, res) => {
     });
 
     const botText = claudeResponse.data.content[0].text;
-    console.log(`✅ Claude ответил\n`);
+    console.log(`✅ Claude ответил: "${botText}"\n`);
 
     // Сохраняем ответ в Firebase
-    console.log('💾 Сохраняю ответ...');
+    console.log('💾 Сохраняю ответ в Firebase...');
     await saveToFirebase(clientId, sessionId, {
       role: 'assistant',
       content: botText,
       channel: 'whatsapp',
       timestamp: new Date().toISOString()
     });
+    console.log('✅ Ответ сохранен\n');
 
     // Отправляем в WhatsApp
     console.log('📤 Отправляю в WhatsApp...');
     await sendWhatsApp(sender, botText, greenApiIdInstance, greenApiToken);
+    console.log('✅ Отправлено в WhatsApp\n');
 
-    // Отправляем в Telegram
+    // Отправляем уведомление в Telegram (менеджеру)
     if (tgToken && tgChatId) {
-      console.log('📤 Отправляю в Telegram...');
+      console.log('📤 Отправляю уведомление в Telegram...');
       const tgMessage = `📱 *WhatsApp: ${clientId}*\n\n👤 *Юзер:* ${messageText}\n\n🤖 *Nika:* ${botText}`;
       await sendToTelegram(tgToken, tgChatId, tgMessage);
+      console.log('✅ Уведомление отправлено в Telegram\n');
     }
 
-    console.log('\n════════════════════════════════════');
+    console.log('════════════════════════════════════');
     console.log('✅ WEBHOOK УСПЕШНО ОБРАБОТАН');
     console.log('════════════════════════════════════\n');
 
