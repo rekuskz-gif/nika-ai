@@ -1,13 +1,13 @@
 module.exports = async function getClientData(phoneNumber) {
   try {
     const cleanPhone = String(phoneNumber).trim();
-    console.log(`� Ищу клиента: ${cleanPhone}`);
+    console.log(`� [getClientData] Ищу клиента: ${cleanPhone}`);
 
-    // � ТЕСТОВЫЕ ДАННЫЕ - ПОКА Google Sheets НЕ РАБОТАЕТ
-    console.log('⚠️ ИСПОЛЬЗУЮТСЯ ТЕСТОВЫЕ ДАННЫЕ!');
+    // � ТЕСТОВЫЕ ДАННЫЕ
+    console.log('⚠️ [getClientData] ИСПОЛЬЗУЮТСЯ ТЕСТОВЫЕ ДАННЫЕ!');
     
     if (cleanPhone === '77077503507') {
-      console.log('✅ (ТЕСТ) Найден: mina_001');
+      console.log('✅ [getClientData] Найден: mina_001');
       return {
         clientId: 'mina_001',
         botName: 'Ника',
@@ -22,10 +22,10 @@ module.exports = async function getClientData(phoneNumber) {
       };
     }
 
-    console.log(`❌ Клиент ${cleanPhone} не найден`);
+    console.log(`❌ [getClientData] Клиент ${cleanPhone} не найден`);
     return null;
   } catch (error) {
-    console.error('❌ getClientData error:', error.message);
+    console.error('❌ [getClientData] Ошибка:', error.message);
     return null;
   }
 };
