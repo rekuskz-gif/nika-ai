@@ -1,119 +1,55 @@
+cat > bot.js << 'EOF'
 const express = require('express');
 const axios = require('axios');
-require('dotenv').config();
-
 const app = express();
 app.use(express.json());
 
-// Green-API данные
 const API_URL = 'https://1105.api.green-api.com';
 const ID_INSTANCE = '1105585279';
 const API_TOKEN = '07e78d2cfdc3490592b0ac0ec055bc442c9bcbbfc6a244e4b4';
+const CLAUDE_API_KEY = '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';
 
-// Claude API
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
-
-// Firebase (подключим позже)
-let botEnabled = {}; // { phoneNumber: true/false }
-
-// Получить сообщения из Green-API
 app.post('/webhook', async (req, res) => {
   try {
+    console.log('📩 Webhook получен');
     const data = req.body;
     
-    // Проверяем что это сообщение от клиента
-    if (!data.body || !data.body.senderData) {
+    if (!data || !data.body) {
+      console.log('⚠️ Нет данных');
       return res.status(200).send('OK');
     }
 
-    const phoneNumber = data.body.senderData.chatId;
-    const messageText = data.body.messageData.textMessageData.textMessage;
+    const phoneNumber = data.body?.senderData?.chatId;
+    const messageText = data.body?.messageData?.textMessageData?.textMessage;
 
-    console.log(`📱 Сообщение от ${phoneNumber}: ${messageText}`);
-
-    // Проверяем включен ли бот для этого чата
-    if (!botEnabled[phoneNumber]) {
-      console.log(`🔴 Бот отключен для ${phoneNumber}`);
+    if (!phoneNumber || !messageText) {
+      console.log('⚠️ Нет номера или текста');
       return res.status(200).send('OK');
     }
 
-    // Отправляем в Claude
-    const nicolaResponse = await askNicola(messageText, phoneNumber);
-
-    // Отправляем ответ в WhatsApp
-    await sendWhatsAppMessage(phoneNumber, nicolaResponse);
-
-    res.status(200).send('OK');
-  } catch (error) {
-    console.error('❌ Ошибка:', error);
-    res.status(500).send('Error');
-  }
-});
-
-// Отправить сообщение в Claude
-async function askNicola(message, phoneNumber) {
-  try {
-    // TODO: Получить промт из Google Диска
-    const prompt = `Ты Ника - вежливый ИИ ассистент. Помогай клиентам.`;
+    console.log(`📱 От ${phoneNumber}: ${messageText}`);
 
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
       model: 'claude-opus-4-20250805',
       max_tokens: 1000,
-      system: prompt,
-      messages: [
-        { role: 'user', content: message }
-      ]
-    }, {
-      headers: {
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01'
-      }
+      system: 'Ты Ника - вежливый ИИ помощник',
+      messages: [{ role: 'user', content: messageText }]
+    }, { headers: { 'x-api-key': CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' } });
+
+    const answer = response.data.content[0].text + '\n\n— Ника 🤖';
+
+    await axios.post(`${API_URL}/waAPI/sendMessage/${ID_INSTANCE}/${API_TOKEN}`, {
+      chatId: phoneNumber,
+      message: answer
     });
 
-    let nicolaText = response.data.content[0].text;
-    nicolaText += '\n\n— Ника 🤖';
-
-    return nicolaText;
-  } catch (error) {
-    console.error('❌ Ошибка Claude:', error);
-    return 'Извините, произошла ошибка. Попробуйте позже.';
+    console.log(`✅ Отправлено`);
+    res.status(200).send('OK');
+  } catch(e) {
+    console.error('❌ Ошибка:', e.message);
+    res.status(500).send('Error');
   }
-}
-
-// Отправить сообщение в WhatsApp через Green-API
-async function sendWhatsAppMessage(phoneNumber, message) {
-  try {
-    await axios.post(
-      `${API_URL}/waAPI/sendMessage/${ID_INSTANCE}/${API_TOKEN}`,
-      {
-        chatId: phoneNumber,
-        message: message
-      }
-    );
-    console.log(`✅ Сообщение отправлено ${phoneNumber}`);
-  } catch (error) {
-    console.error('❌ Ошибка отправки:', error);
-  }
-}
-
-// Включить бота для чата
-app.post('/enable-bot/:phone', (req, res) => {
-  const phone = req.params.phone;
-  botEnabled[phone] = true;
-  console.log(`🟢 Ника включена для ${phone}`);
-  res.send('OK');
 });
 
-// Отключить бота для чата
-app.post('/disable-bot/:phone', (req, res) => {
-  const phone = req.params.phone;
-  botEnabled[phone] = false;
-  console.log(`🔴 Ника отключена для ${phone}`);
-  res.send('OK');
-});
-
-// Запуск сервера
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Бот запущен на порту ${PORT}`);
-});
+app.listen(3000, () => console.log('🚀 Бот Ника запущен на порту 3000'));
+EOF
