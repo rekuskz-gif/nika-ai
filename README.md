@@ -1,43 +1,29 @@
-## 🚀 Развёртывание !!
+# Nika - WhatsApp AI Bot 🤖
 
-### Локально
+Умный AI ассистент в WhatsApp на базе Claude. Часть платформы AI Mina.
+
+## 📋 Описание
+
+**Nika** автоматизирует общение в WhatsApp:
+- Получает сообщения через Green-API
+- Генерирует ответы Claude AI
+- Отправляет ответы в WhatsApp
+- Уведомляет менеджера в Telegram
+- Сохраняет историю в Firebase
+
+## 🚀 Стек
+
+- **Backend:** Node.js + Vercel Serverless Functions
+- **AI:** Claude API (claude-haiku-4-5-20251001)
+- **База:** Firebase Realtime Database
+- **Конфиг:** Google Sheets
+- **Интеграции:** Green-API (WhatsApp), Telegram
+- **Хостинг:** Vercel
+
+## 📦 Установка
 
 ```bash
-npm run dev
+npm install
 ```
 
-### На Vercel
-
-1. Подключи GitHub репо
-2. Добавь Environment Variables
-3. Deploy
-
-## 🧪 Тестирование
-
-Отправь сообщение на номер WhatsApp, указанный в Google Sheets.
-
-Ожидаемый результат:
-- ✅ Сообщение в Telegram менеджеру
-- ✅ Ответ в WhatsApp
-- ✅ История в Firebase
-
-## 📚 Документация
-
-- [Green-API docs](https://green-api.com/)
-- [Claude API](https://claude.ai/)
-- [Firebase docs](https://firebase.google.com/docs)
-- [Telegram Bot API](https://core.telegram.org/bots/api)
-
-## 🔗 Связанные проекты
-
-- **AI Mina** - Основная платформа с виджетами
-- **Google Sheets** - Конфигурация клиентов
-- **Firebase** - Хранилище истории
-
-## 📄 Лицензия
-
-MIT
-
----
-
-Разработано как часть платформы AI Mina.
+## 🔌 Webhook URL
