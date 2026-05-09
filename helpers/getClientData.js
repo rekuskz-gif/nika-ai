@@ -6,7 +6,6 @@ module.exports = async function getClientData(phoneNumber) {
     const cleanPhone = String(phoneNumber).trim();
     console.log(`� Ищу клиента: ${cleanPhone}`);
 
-    // Используем FIREBASE_PRIVATE_KEY (он уже целый)
     const fullPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
     
     if (!fullPrivateKey) {
@@ -16,7 +15,6 @@ module.exports = async function getClientData(phoneNumber) {
 
     console.log(`� FullPrivateKey length: ${fullPrivateKey.length}`);
 
-    // Создаём JWT токен
     console.log('� Создаю JWT токен...');
     const serviceAccountAuth = new JWT({
       email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -25,20 +23,21 @@ module.exports = async function getClientData(phoneNumber) {
     });
 
     console.log('� Инициализирую GoogleSpreadsheet...');
-    // Инициализируем документ с JWT
     const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
     
-    console.log('⏳ Загружаю информацию о документе...');
-    await Promise.race([
-      doc.loadInfo(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout: Google Sheets loadInfo')), 10000))
-    ]);
+    console.log('⏳ Загружаю информацию о документе (timeout 5 сек)...');
+    
+    // Timeout 5 секунд вместо 10
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('⏱️ Timeout: Google Sheets loadInfo')), 5000)
+    );
+    
+    await Promise.race([doc.loadInfo(), timeoutPromise]);
     console.log('✅ Google Sheets загружена');
 
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
     if (!sheet) {
       console.log('❌ Лист "Nika WhatsApp" не найден');
-      console.log('� Доступные листы:', Object.keys(doc.sheetsByTitle));
       return null;
     }
 
@@ -46,13 +45,19 @@ module.exports = async function getClientData(phoneNumber) {
     const rows = await sheet.getRows();
     console.log(`� Всего строк: ${rows.length}`);
 
+    console.log(`� Ищу телефон: ${cleanPhone}`);
     const clientRow = rows.find(row => {
       const rowPhone = String(row.get('whatsapp phone') || '').trim();
-      return rowPhone === cleanPhone && row.get('clientId');
+      const clientId = row.get('clientId');
+      if (rowPhone === cleanPhone && clientId) {
+        console.log(`   ✅ Найдено совпадение: ${rowPhone} = ${clientId}`);
+        return true;
+      }
+      return false;
     });
 
     if (!clientRow) {
-      console.log(`❌ Клиент ${cleanPhone} не найден`);
+      console.log(`❌ Клиент ${cleanPhone} не найден в таблице`);
       return null;
     }
 
@@ -71,7 +76,7 @@ module.exports = async function getClientData(phoneNumber) {
     };
   } catch (error) {
     console.error('❌ getClientData error:', error.message);
-    console.error(error);
+    console.error('Stack:', error.stack);
     return null;
   }
 };
