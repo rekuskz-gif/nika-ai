@@ -1,19 +1,19 @@
 {
-  "name": "nika-bot",
+  "name": "nika-whatsapp",
   "version": "1.0.0",
-  "description": "Бот Ника для WhatsApp с Claude AI",
-  "main": "bot.js",
+  "description": "Nika WhatsApp AI Bot",
+  "main": "api/whatsapp_webhook.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "dev": "vercel dev",
+    "build": "echo 'No build needed'",
+    "start": "node api/whatsapp_webhook.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
     "axios": "^1.6.0",
-    "dotenv": "^16.3.1",
-    "firebase-admin": "^12.0.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
+    "firebase-admin": "^12.0.0",
+    "google-spreadsheet": "^4.1.0",
+    "google-auth-library": "^9.6.0",
+    "googleapis": "^118.0.0",
+    "dotenv": "^16.3.1"
   }
 }
