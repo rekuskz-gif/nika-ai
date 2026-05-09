@@ -4,18 +4,24 @@ const { JWT } = require('google-auth-library');
 module.exports = async function getClientData(phoneNumber) {
   try {
     const cleanPhone = String(phoneNumber).trim();
-    console.log(`🔍 Ищу клиента: ${cleanPhone}`);
+    console.log(`� Ищу клиента: ${cleanPhone}`);
 
-    // Создаём JWT токен
+    // Объединяем 2 части GOOGLE_PRIVATE_KEY
+    const privateKeyPart1 = process.env.GOOGLE_PRIVATE_KEY_PART1 || '';
+    const privateKeyPart2 = process.env.GOOGLE_PRIVATE_KEY_PART2 || '';
+    const fullPrivateKey = privateKeyPart1 + privateKeyPart2;
+
+    console.log(`� FullPrivateKey length: ${fullPrivateKey.length}`);
+
+    // Создаём JWT токен с объединённым ключом
     const serviceAccountAuth = new JWT({
       email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      key: fullPrivateKey.replace(/\\n/g, '\n'),
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 
     // Инициализируем документ с JWT
     const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
-
     await doc.loadInfo();
     console.log('✅ Google Sheets загружена');
 
@@ -26,7 +32,7 @@ module.exports = async function getClientData(phoneNumber) {
     }
 
     const rows = await sheet.getRows();
-    console.log(`📊 Всего строк: ${rows.length}`);
+    console.log(`� Всего строк: ${rows.length}`);
 
     const clientRow = rows.find(row => {
       const rowPhone = String(row.get('whatsapp phone') || '').trim();
