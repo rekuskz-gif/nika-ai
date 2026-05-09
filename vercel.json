@@ -3,6 +3,11 @@
   "public": false,
   "buildCommand": "echo 'No build required'",
   "outputDirectory": "./",
+  "functions": {
+    "api/whatsapp_webhook.js": {
+      "maxDuration": 30
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
