@@ -3,7 +3,7 @@ require('dotenv').config();
 // ✅ ИНИЦИАЛИЗИРУЕМ FIREBASE СРАЗУ
 require('../config/firebase');
 
-// ⚠️ УДАЛИ ДУБЛИРОВАНИЕ! Оставь только ОДИН require axios!
+// ⚠️ ОДИН require axios!
 const axios = require('axios');
 
 const getClientData = require('../helpers/getClientData');
@@ -123,4 +123,34 @@ module.exports = async (req, res) => {
     });
 
     const botText = claudeResponse.data.content[0].text;
-    console.lo
+    console.log(`✅ Claude ответил\n`);
+
+    // Сохраняем ответ в Firebase
+    console.log('💾 Сохраняю ответ...');
+    await saveToFirebase(clientId, sessionId, {
+      role: 'assistant',
+      content: botText,
+      channel: 'whatsapp',
+      timestamp: new Date().toISOString()
+    });
+
+    // Отправляем в WhatsApp
+    console.log('📤 Отправляю в WhatsApp...');
+    await sendWhatsApp(sender, botText, greenApiIdInstance, greenApiToken);
+
+    // Отправляем в Telegram
+    if (tgToken && tgChatId) {
+      console.log('📤 Отправляю в Telegram...');
+      const tgMessage = `📱 *WhatsApp: ${clientId}*\n\n👤 *Юзер:* ${messageText}\n\n🤖 *Nika:* ${botText}`;
+      await sendToTelegram(tgToken, tgChatId, tgMessage);
+    }
+
+    console.log('\n════════════════════════════════════');
+    console.log('✅ WEBHOOK УСПЕШНО ОБРАБОТАН');
+    console.log('════════════════════════════════════\n');
+
+  } catch (error) {
+    console.error('❌ ОШИБКА:', error.message);
+    console.error(error);
+  }
+};
