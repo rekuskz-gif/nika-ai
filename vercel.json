@@ -1,1 +1,18 @@
-
+{
+  "version": 2,
+  "functions": {
+    "api/whatsapp_webhook.js": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "GOOGLE_SHEET_ID": "@google_sheet_id",
+    "GOOGLE_SERVICE_ACCOUNT_EMAIL": "@google_service_account_email",
+    "GOOGLE_PRIVATE_KEY": "@google_private_key",
+    "FIREBASE_PROJECT_ID": "@firebase_project_id",
+    "FIREBASE_CLIENT_EMAIL": "@firebase_client_email",
+    "FIREBASE_PRIVATE_KEY": "@firebase_private_key",
+    "FIREBASE_DATABASE_URL": "@firebase_database_url"
+  }
+}
