@@ -6,7 +6,12 @@ module.exports = async function getClientData(phoneNumber) {
     const cleanPhone = String(phoneNumber).trim();
     console.log(`[getClientData] Ищу клиента по телефону: ${cleanPhone}`);
 
-    const privateKey = (process.env.GOOGLE_PRIVATE_KEY_PART1 + process.env.GOOGLE_PRIVATE_KEY_PART2).replace(/\\n/g, '\n');
+    const part1 = process.env.GOOGLE_PRIVATE_KEY_PART1 || '';
+    const part2 = process.env.GOOGLE_PRIVATE_KEY_PART2 || '';
+    const privateKey = (part1 + part2).replace(/\\n/g, '\n');
+
+    console.log('[KEY CHECK] Начало:', privateKey.substring(0, 50));
+    console.log('[KEY CHECK] Конец:', privateKey.substring(privateKey.length - 50));
 
     const serviceAccountAuth = new JWT({
       email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -25,6 +30,7 @@ module.exports = async function getClientData(phoneNumber) {
     }
 
     const rows = await sheet.getRows();
+    console.log(`[getClientData] Строк в таблице: ${rows.length}`);
 
     const row = rows.find(r => String(r.get('whatsapp phone')).trim() === cleanPhone);
 
@@ -46,7 +52,8 @@ module.exports = async function getClientData(phoneNumber) {
       if (!authSheet) return null;
 
       const authRows = await authSheet.getRows();
-      const authRow = authRows.find(r => String(r.get('clientId')).trim() === String(row.get('clientId')).trim());
+      const clientIdVal = String(row.get('clientId')).trim();
+      const authRow = authRows.find(r => String(r.get('clientId')).trim() === clientIdVal);
       if (!authRow) return null;
 
       const authVal = authRow.get(fieldName);
@@ -63,6 +70,9 @@ module.exports = async function getClientData(phoneNumber) {
     const greenApiToken = await getValue('green api token');
     const status = await getValue('status');
     const balance = await getValue('balance');
+
+    console.log(`[getClientData] status: ${status}`);
+    console.log(`[getClientData] claudeApiKey: ${claudeApiKey ? claudeApiKey.substring(0, 20) + '...' : 'НЕТ'}`);
 
     if (status !== 'active') {
       console.log(`[getClientData] Клиент ${clientId} неактивен`);
@@ -86,6 +96,7 @@ module.exports = async function getClientData(phoneNumber) {
 
   } catch (error) {
     console.error('[getClientData] Ошибка:', error.message);
+    console.error('[getClientData] Stack:', error.stack);
     return null;
   }
 };
