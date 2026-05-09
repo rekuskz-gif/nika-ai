@@ -1,28 +1,17 @@
-// ============================================================
-// Отправляет ответ в WhatsApp через Green-API
-// ============================================================
-
 const axios = require('axios');
 
-const sendWhatsApp = async (phoneNumber, message, greenApiUrl, greenApiIdInstance, greenApiToken) => {
-  console.log(`📱 Отправляем в WhatsApp: ${phoneNumber}`);
-
+module.exports = async (phoneNumber, message, greenApiUrl, greenApiIdInstance, greenApiToken) => {
   try {
-    const response = await axios.post(
-      `${greenApiUrl}/waAPI/sendMessage/${greenApiIdInstance}/${greenApiToken}`,
-      {
-        chatId: phoneNumber,
-        message: message
-      }
-    );
+    const url = `${greenApiUrl}/waInstance${greenApiIdInstance}/sendMessage/${greenApiToken}`;
 
-    console.log(`✅ Сообщение отправлено в WhatsApp`);
+    const response = await axios.post(url, {
+      chatId: `${phoneNumber}@c.us`,
+      message: message
+    });
+
+    console.log('✅ Отправлено в WhatsApp');
     return response.data;
-
   } catch (error) {
     console.error('❌ Ошибка sendWhatsApp:', error.message);
-    throw error;
   }
 };
-
-module.exports = sendWhatsApp;
