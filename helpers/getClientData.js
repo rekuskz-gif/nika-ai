@@ -25,15 +25,19 @@ module.exports = async function getClientData(instanceId) {
       return null;
     }
 
-    // Читаем с 5й строки (offset: 4)
-    const rows = await sheet.getRows({ offset: 4 });
-    console.log(`[getClientData] Строк начиная с 5й: ${rows.length}`);
+    const rows = await sheet.getRows();
+    console.log(`[getClientData] Всего строк: ${rows.length}`);
 
-    const row = rows.find(r => String(r.get('green api id instance')).trim() === String(instanceId).trim());
+    // Ищем строку игнорируя пустые
+    const row = rows.find(r => {
+      const val = r.get('green api id instance');
+      if (!val || String(val).trim() === '') return false;
+      return String(val).trim() === String(instanceId).trim();
+    });
 
     if (!row) {
       console.log(`[getClientData] Клиент с instanceId ${instanceId} не найден`);
-      console.log('[getClientData] Инстансы в таблице:', rows.map(r => r.get('green api id instance')));
+      console.log('[getClientData] Инстансы в таблице:', rows.map(r => r.get('green api id instance')).filter(Boolean));
       return null;
     }
 
@@ -48,7 +52,8 @@ module.exports = async function getClientData(instanceId) {
       const authSheet = doc.sheetsByTitle['Authentication'];
       if (!authSheet) return null;
       const authRows = await authSheet.getRows();
-      const authRow = authRows.find(r => String(r.get('clientId')).trim() === String(row.get('clientId')).trim());
+      const clientIdVal = String(row.get('clientId')).trim();
+      const authRow = authRows.find(r => String(r.get('clientId')).trim() === clientIdVal);
       if (!authRow) return null;
       const authVal = authRow.get(fieldName);
       return authVal ? String(authVal).trim() : null;
