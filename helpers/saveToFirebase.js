@@ -5,10 +5,13 @@ module.exports.saveToFirebase = async (clientId, sessionId, message) => {
   try {
     console.log(`� [Firebase] Сохраняю: ${message.role} - "${message.content.substring(0, 30)}..."`);
     const ref = db.ref(`chats/${clientId}/${sessionId}/messages`);
-    await ref.push(message);
-    console.log(`✅ [Firebase] Сохранено успешно`);
+    const result = await ref.push(message);
+    console.log(`✅ [Firebase] Сохранено успешно - ID: ${result.key}`);
+    return result;
   } catch (error) {
     console.error(`❌ [Firebase] Ошибка сохранения:`, error.message);
+    console.error(`❌ [Firebase] Stack:`, error.stack);
+    throw error;
   }
 };
 
@@ -20,6 +23,8 @@ module.exports.getHistoryFromFirebase = async (clientId, sessionId) => {
       .limitToLast(10)
       .once('value');
     
+    console.log(`� [Firebase] Snapshot received`);
+    
     const messages = [];
     snapshot.forEach(child => {
       messages.push(child.val());
@@ -29,6 +34,7 @@ module.exports.getHistoryFromFirebase = async (clientId, sessionId) => {
     return messages;
   } catch (error) {
     console.error(`❌ [Firebase] Ошибка получения:`, error.message);
+    console.error(`❌ [Firebase] Stack:`, error.stack);
     return [];
   }
 };
