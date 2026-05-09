@@ -3,28 +3,24 @@ const { JWT } = require('google-auth-library');
 
 module.exports = async function getClientData(phoneNumber) {
   try {
-    console.log(`🔍 getClientData called with: ${phoneNumber} (type: ${typeof phoneNumber})`);
-
-    // Убедись что это строка
     const cleanPhone = String(phoneNumber).trim();
-    console.log(`📱 Clean phone: ${cleanPhone}`);
+    console.log(`🔍 Ищу клиента: ${cleanPhone}`);
 
-    const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID;
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
 
-    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID);
-
-    // Правильная авторизация для google-spreadsheet v4
-    await doc.useServiceAccountAuth({
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    // НОВЫЙ СИНТАКСИС с JWT
+    const serviceAccountAuth = new JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 
+    await doc.auth.setAuthenticationMethod(serviceAccountAuth);
     await doc.loadInfo();
 
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
-    
     if (!sheet) {
-      console.log('❌ Лист не найден');
+      console.log('❌ Лист "Nika WhatsApp" не найден');
       return null;
     }
 
@@ -32,30 +28,28 @@ module.exports = async function getClientData(phoneNumber) {
     console.log(`📊 Всего строк: ${rows.length}`);
 
     const clientRow = rows.find(row => {
-      const rowPhone = String(row['whatsapp phone'] || '').trim();
-      console.log(`  Проверяю: ${rowPhone} === ${cleanPhone}? ${rowPhone === cleanPhone}`);
-      return rowPhone === cleanPhone;
+      const rowPhone = String(row.get('whatsapp phone') || '').trim();
+      return rowPhone === cleanPhone && row.get('clientId');
     });
 
     if (!clientRow) {
-      console.log(`❌ Клиент не найден для номера ${cleanPhone}`);
+      console.log(`❌ Клиент ${cleanPhone} не найден`);
       return null;
     }
 
-    console.log(`✅ Найден: ${clientRow['clientId']}`);
-
+    console.log(`✅ Найден: ${clientRow.get('clientId')}`);
     return {
-      clientId: clientRow['clientId'],
-      botName: clientRow['bot Name'],
-      googleDocId: clientRow['google DocId'],
-      claudeApiKey: clientRow['claudeApiKey'],
-      tgToken: clientRow['tgToken'],
-      tgChatId: clientRow['tg ChatId'],
-      greenApiIdInstance: clientRow['green api id instance'],
-      greenApiToken: clientRow['green api token'],
-      status: clientRow['status'],
+      clientId: clientRow.get('clientId'),
+      botName: clientRow.get('bot Name'),
+      googleDocId: clientRow.get('google DocId'),
+      claudeApiKey: clientRow.get('claudeApiKey'),
+      tgToken: clientRow.get('tgToken'),
+      tgChatId: clientRow.get('tg ChatId'),
+      greenApiIdInstance: clientRow.get('green api id instance'),
+      greenApiToken: clientRow.get('green api token'),
+      status: clientRow.get('status'),
+      balance: clientRow.get('balance'),
     };
-
   } catch (error) {
     console.error('❌ getClientData error:', error.message);
     return null;
