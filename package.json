@@ -1,23 +1,6 @@
 {
   "name": "nika-whatsapp",
   "version": "1.0.0",
-  "description": "AI ассистент в WhatsApp. Часть платформы AI Mina.",
-  "main": "api/whatsapp_webhook.js",
-  "scripts": {
-    "dev": "node api/whatsapp_webhook.js",
-    "start": "node api/whatsapp_webhook.js",
-    "build": "echo 'Vercel Functions - no build needed'"
-  },
-  "keywords": [
-    "whatsapp",
-    "ai",
-    "claude",
-    "firebase",
-    "telegram",
-    "green-api"
-  ],
-  "author": "rekuskz-gif",
-  "license": "MIT",
   "dependencies": {
     "axios": "^1.6.0",
     "firebase-admin": "^12.0.0",
@@ -26,7 +9,5 @@
     "googleapis": "^118.0.0",
     "dotenv": "^16.3.1"
   },
-  "engines": {
-    "node": "24.x"
-  }
+  "engines": { "node": "24.x" }
 }
