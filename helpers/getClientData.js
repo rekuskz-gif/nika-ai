@@ -3,52 +3,46 @@ const { JWT } = require('google-auth-library');
 
 module.exports = async function getClientData(phoneNumber) {
   try {
-    console.log(`🔍 Ищу клиента: ${phoneNumber}`);
+    console.log(`🔍 getClientData called with: ${phoneNumber} (type: ${typeof phoneNumber})`);
+
+    // Убедись что это строка
+    const cleanPhone = String(phoneNumber).trim();
+    console.log(`📱 Clean phone: ${cleanPhone}`);
 
     const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID;
 
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID);
 
-    // ПРАВИЛЬНЫЙ СПОСОБ для новой версии google-spreadsheet
-    const auth = new JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      scopes: [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive'
-      ]
+    // Правильная авторизация для google-spreadsheet v4
+    await doc.useServiceAccountAuth({
+      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     });
 
-    doc.useServiceAccountAuth(auth);
     await doc.loadInfo();
 
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
     
     if (!sheet) {
-      console.log('❌ Лист "Nika WhatsApp" не найден');
+      console.log('❌ Лист не найден');
       return null;
     }
 
-    // Получаем строки (начиная со строки 2, потому что 1 = заголовки)
-    const rows = await sheet.getRows({ offset: 1 });
+    const rows = await sheet.getRows();
+    console.log(`📊 Всего строк: ${rows.length}`);
 
-    // Ищем по номеру WhatsApp
-    const clientRow = rows.find(row => 
-      row['whatsapp phone'] && 
-      row['whatsapp phone'].toString().trim() === phoneNumber.toString().trim()
-    );
+    const clientRow = rows.find(row => {
+      const rowPhone = String(row['whatsapp phone'] || '').trim();
+      console.log(`  Проверяю: ${rowPhone} === ${cleanPhone}? ${rowPhone === cleanPhone}`);
+      return rowPhone === cleanPhone;
+    });
 
     if (!clientRow) {
-      console.log(`❌ Клиент ${phoneNumber} не найден`);
+      console.log(`❌ Клиент не найден для номера ${cleanPhone}`);
       return null;
     }
 
-    if (!clientRow['clientId']) {
-      console.log(`❌ clientId пусто в строке`);
-      return null;
-    }
-
-    console.log(`✅ Клиент найден: ${clientRow['clientId']}`);
+    console.log(`✅ Найден: ${clientRow['clientId']}`);
 
     return {
       clientId: clientRow['clientId'],
@@ -60,13 +54,10 @@ module.exports = async function getClientData(phoneNumber) {
       greenApiIdInstance: clientRow['green api id instance'],
       greenApiToken: clientRow['green api token'],
       status: clientRow['status'],
-      balance: clientRow['balance'],
-      pricePerChar: clientRow['price per char'],
     };
 
   } catch (error) {
-    console.error('❌ Ошибка getClientData:', error.message);
-    console.error(error);
+    console.error('❌ getClientData error:', error.message);
     return null;
   }
 };
