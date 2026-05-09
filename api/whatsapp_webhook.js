@@ -1,4 +1,17 @@
 require('dotenv').config();
+
+// ✅ ИНИЦИАЛИЗИРУЕМ FIREBASE СРАЗУ
+require('../config/firebase');
+
+const axios = require('axios');
+
+const getClientData = require('../helpers/getClientData');
+const { saveToFirebase, getHistoryFromFirebase } = require('../helpers/saveToFirebase');
+const sendWhatsApp = require('../helpers/sendWhatsApp');
+const sendToTelegram = require('../helpers/sendToTelegram');
+
+
+require('dotenv').config();
 const axios = require('axios');
 
 const getClientData = require('../helpers/getClientData');
