@@ -1,32 +1,43 @@
-# Nika WhatsApp Bot
+## 🚀 Развёртывание
 
-AI ассистент в WhatsApp для управления клиентами.
-
-## Установка
-
-```bash
-npm install
-```
-
-## Локальное тестирование
+### Локально
 
 ```bash
 npm run dev
 ```
 
-## Развёртывание на Vercel
+### На Vercel
 
-1. Создай проект на Vercel
-2. Подключи GitHub репо
-3. Добавь Environment Variables
-4. Deploy
+1. Подключи GitHub репо
+2. Добавь Environment Variables
+3. Deploy
 
-## Конфигурация
+## 🧪 Тестирование
 
-Google Sheets: "Nika WhatsApp" лист
+Отправь сообщение на номер WhatsApp, указанный в Google Sheets.
 
-## Webhook URL
+Ожидаемый результат:
+- ✅ Сообщение в Telegram менеджеру
+- ✅ Ответ в WhatsApp
+- ✅ История в Firebase
 
-```
-https://nika-whatsapp.vercel.app/api/whatsapp_webhook
-```
+## 📚 Документация
+
+- [Green-API docs](https://green-api.com/)
+- [Claude API](https://claude.ai/)
+- [Firebase docs](https://firebase.google.com/docs)
+- [Telegram Bot API](https://core.telegram.org/bots/api)
+
+## 🔗 Связанные проекты
+
+- **AI Mina** - Основная платформа с виджетами
+- **Google Sheets** - Конфигурация клиентов
+- **Firebase** - Хранилище истории
+
+## 📄 Лицензия
+
+MIT
+
+---
+
+Разработано как часть платформы AI Mina.
