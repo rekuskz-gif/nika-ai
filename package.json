@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "AI ассистент в WhatsApp. Часть платформы AI Mina.",
   "main": "api/whatsapp_webhook.js",
-  "type": "module",
   "scripts": {
     "dev": "node api/whatsapp_webhook.js",
     "start": "node api/whatsapp_webhook.js",
@@ -26,9 +25,6 @@
     "google-auth-library": "^9.6.0",
     "googleapis": "^118.0.0",
     "dotenv": "^16.3.1"
-  },
-  "devDependencies": {
-    "vercel": "^33.0.0"
   },
   "engines": {
     "node": "24.x"
