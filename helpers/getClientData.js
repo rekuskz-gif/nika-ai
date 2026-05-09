@@ -17,23 +17,32 @@ module.exports = async function getClientData(phoneNumber) {
     console.log(`� FullPrivateKey length: ${fullPrivateKey.length}`);
 
     // Создаём JWT токен
+    console.log('� Создаю JWT токен...');
     const serviceAccountAuth = new JWT({
       email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       key: fullPrivateKey.replace(/\\n/g, '\n'),
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 
+    console.log('� Инициализирую GoogleSpreadsheet...');
     // Инициализируем документ с JWT
     const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
-    await doc.loadInfo();
+    
+    console.log('⏳ Загружаю информацию о документе...');
+    await Promise.race([
+      doc.loadInfo(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout: Google Sheets loadInfo')), 10000))
+    ]);
     console.log('✅ Google Sheets загружена');
 
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
     if (!sheet) {
       console.log('❌ Лист "Nika WhatsApp" не найден');
+      console.log('� Доступные листы:', Object.keys(doc.sheetsByTitle));
       return null;
     }
 
+    console.log('� Получаю строки...');
     const rows = await sheet.getRows();
     console.log(`� Всего строк: ${rows.length}`);
 
