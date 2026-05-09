@@ -1,62 +1,32 @@
-# Бот Ника 🤖
+# Nika WhatsApp Bot
 
-Бот Ники для WhatsApp с использованием Claude AI и Green-API.
+AI ассистент в WhatsApp для управления клиентами.
 
-## Что нужно сделать
+## Установка
 
-### 1. Установить Node.js
-https://nodejs.org/
-
-### 2. Установить зависимости
 ```bash
 npm install
 ```
 
-### 3. Получить Claude API ключ
-- Зайти на https://console.anthropic.com/
-- Создать API ключ
-- Вставить его в .env файл (CLAUDE_API_KEY)
+## Локальное тестирование
 
-### 4. Запустить бот
 ```bash
-npm start
+npm run dev
 ```
 
-Бот будет работать на http://localhost:3000
+## Развёртывание на Vercel
 
-### 5. Настроить webhook в Green-API
-В настройках Green-API указать URL вебхука:
+1. Создай проект на Vercel
+2. Подключи GitHub репо
+3. Добавь Environment Variables
+4. Deploy
+
+## Конфигурация
+
+Google Sheets: "Nika WhatsApp" лист
+
+## Webhook URL
+
 ```
-https://ваш-сервер.com/webhook
+https://nika-whatsapp.vercel.app/api/whatsapp_webhook
 ```
-
-## Как это работает
-
-1. Клиент пишет в WhatsApp
-2. Green-API отправляет сообщение на `/webhook`
-3. Бот получает сообщение
-4. Проверяет включен ли бот для этого чата
-5. Отправляет в Claude API
-6. Claude генерирует ответ
-7. Бот отправляет ответ в WhatsApp
-
-## Команды для управления ботом
-
-Включить бота для чата:
-```
-POST /enable-bot/77017503507
-```
-
-Отключить бота для чата:
-```
-POST /disable-bot/77017503507
-```
-
-## TODO
-
-- [ ] Подключить Firebase для хранения истории
-- [ ] Получать промт из Google Диска
-- [ ] Интеграция с Telegram для менеджера
-- [ ] Логирование всех диалогов
-- [ ] Перевод сообщений клиента
-- [ ] Поддержка разных языков
