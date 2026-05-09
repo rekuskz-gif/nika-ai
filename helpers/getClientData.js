@@ -1,41 +1,40 @@
-// ============================================
-// HELPER: Получить данные клиента из Google Sheets
-// ============================================
-
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 
-// ✅ ДОБАВИТЬ async!
-module.exports = async (phoneNumber) => {
+module.exports = async function getClientData(phoneNumber) {
   try {
+    console.log(`🔍 Ищу клиента: ${phoneNumber}`);
+
     const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID;
 
-    // Создаём объект Google Sheets
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID);
 
-    // Авторизуемся
     await doc.useServiceAccountAuth({
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     });
 
-    // Загружаем информацию
     await doc.loadInfo();
 
-    // Открываем лист "Nika WhatsApp"
     const sheet = doc.sheetsByTitle['Nika WhatsApp'];
+    
+    if (!sheet) {
+      console.log('❌ Лист "Nika WhatsApp" не найден');
+      return null;
+    }
 
-    // Получаем все строки
     const rows = await sheet.getRows();
 
-    // Ищем клиента по номеру
-    const clientRow = rows.find(row => row['whatsapp phone'] === phoneNumber);
+    const clientRow = rows.find(row => 
+      row['whatsapp phone'] && row['whatsapp phone'].toString() === phoneNumber.toString()
+    );
 
     if (!clientRow) {
       console.log(`❌ Клиент ${phoneNumber} не найден`);
       return null;
     }
 
-    // Возвращаем данные
+    console.log(`✅ Клиент найден: ${clientRow['clientId']}`);
+
     return {
       clientId: clientRow['clientId'],
       botName: clientRow['bot Name'],
@@ -47,10 +46,12 @@ module.exports = async (phoneNumber) => {
       greenApiIdInstance: clientRow['green api id instance'],
       greenApiToken: clientRow['green api token'],
       status: clientRow['status'],
+      balance: clientRow['balance'],
+      pricePerChar: clientRow['price per char'],
     };
 
   } catch (error) {
-    console.error('❌ Ошибка getClientData:', error);
+    console.error('❌ Ошибка getClientData:', error.message);
     return null;
   }
 };
